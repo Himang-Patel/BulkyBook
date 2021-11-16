@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using BulkyBook.Utility;
 
 namespace BulkyBook.Areas.Identity.Pages.Account
 {
@@ -18,11 +19,13 @@ namespace BulkyBook.Areas.Identity.Pages.Account
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IEmailSender _emailSender;
+        private readonly SMTPEmailSender _smtpemailSender;
 
-        public ForgotPasswordModel(UserManager<IdentityUser> userManager, IEmailSender emailSender)
+        public ForgotPasswordModel(UserManager<IdentityUser> userManager, IEmailSender emailSender, SMTPEmailSender sMTPEmailSender)
         {
             _userManager = userManager;
             _emailSender = emailSender;
+            _smtpemailSender = sMTPEmailSender;
         }
 
         [BindProperty]
@@ -55,7 +58,10 @@ namespace BulkyBook.Areas.Identity.Pages.Account
                     pageHandler: null,
                     values: new { area = "Identity", code },
                     protocol: Request.Scheme);
+                //SMTP
+                _smtpemailSender.SendEmail(Input.Email, "Reset Password", $"Please reset your password by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
+                //SendGrid
                 await _emailSender.SendEmailAsync(
                     Input.Email,
                     "Reset Password",

@@ -24,15 +24,18 @@ namespace BulkyBook.Areas.Customer.Controllers
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailSender _emailSender;
         private readonly UserManager<IdentityUser> _userManager;
+        private readonly SMTPEmailSender _smtpemailSender;
+
 
         [BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
 
-        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, UserManager<IdentityUser> userManager)
+        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, UserManager<IdentityUser> userManager, SMTPEmailSender sMTPEmailSender)
         {
             _unitOfWork = unitOfWork;
             _emailSender = emailSender;
             _userManager = userManager;
+            _smtpemailSender = sMTPEmailSender;
         }
 
         public IActionResult Index()
@@ -87,6 +90,10 @@ namespace BulkyBook.Areas.Customer.Controllers
                 values: new { area = "Identity", userId = user.Id, code = code },
                 protocol: Request.Scheme);
 
+            //SMTP
+            _smtpemailSender.SendEmail(user.Email, "Confirm your email", $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+            //SendGrid
             await _emailSender.SendEmailAsync(user.Email, "Confirm your email",
                 $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 

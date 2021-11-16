@@ -29,6 +29,7 @@ namespace BulkyBook.Areas.Identity.Pages.Account
         private readonly IEmailSender _emailSender;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly SMTPEmailSender _smtpemailSender;
 
         public RegisterModel(
             UserManager<IdentityUser> userManager,
@@ -36,7 +37,7 @@ namespace BulkyBook.Areas.Identity.Pages.Account
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
             RoleManager<IdentityRole> roleManager,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork, SMTPEmailSender sMTPEmailSender)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -44,6 +45,7 @@ namespace BulkyBook.Areas.Identity.Pages.Account
             _emailSender = emailSender;
             _roleManager = roleManager;
             _unitOfWork = unitOfWork;
+            _smtpemailSender = sMTPEmailSender;
         }
 
         [BindProperty]
@@ -168,7 +170,10 @@ namespace BulkyBook.Areas.Identity.Pages.Account
                         pageHandler: null,
                         values: new { area = "Identity", userId = user.Id, code = code },
                         protocol: Request.Scheme);
+                    //SMTP
+                    _smtpemailSender.SendEmail(Input.Email, "Confirm your email", $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
+                    //SendGrid
                     await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 

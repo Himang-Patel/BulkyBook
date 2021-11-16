@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using BulkyBook.Utility;
 using Microsoft.AspNetCore.Authorization;
 
 using Microsoft.AspNetCore.Identity;
@@ -18,11 +19,13 @@ namespace BulkyBook.Areas.Identity.Pages.Account
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IEmailSender _emailSender;
+        private readonly SMTPEmailSender _smtpemailSender;
 
-        public ResendEmailConfirmationModel(UserManager<IdentityUser> userManager, IEmailSender emailSender)
+        public ResendEmailConfirmationModel(UserManager<IdentityUser> userManager, IEmailSender emailSender, SMTPEmailSender sMTPEmailSender)
         {
             _userManager = userManager;
             _emailSender = emailSender;
+            _smtpemailSender = sMTPEmailSender;
         }
 
         [BindProperty]
@@ -61,6 +64,11 @@ namespace BulkyBook.Areas.Identity.Pages.Account
                 pageHandler: null,
                 values: new { userId = userId, code = code },
                 protocol: Request.Scheme);
+
+            //SMTP
+            _smtpemailSender.SendEmail(Input.Email, "Confirm your email", $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+
+            //SendGrid
             await _emailSender.SendEmailAsync(
                 Input.Email,
                 "Confirm your email",
