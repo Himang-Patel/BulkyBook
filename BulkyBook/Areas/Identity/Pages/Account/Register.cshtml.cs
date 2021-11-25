@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -10,6 +11,7 @@ using BulkyBook.Models;
 using BulkyBook.Utility;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +32,7 @@ namespace BulkyBook.Areas.Identity.Pages.Account
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IUnitOfWork _unitOfWork;
         private readonly SMTPEmailSender _smtpemailSender;
+        private readonly IWebHostEnvironment _hostEnvironment;
 
         public RegisterModel(
             UserManager<IdentityUser> userManager,
@@ -37,7 +40,8 @@ namespace BulkyBook.Areas.Identity.Pages.Account
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
             RoleManager<IdentityRole> roleManager,
-            IUnitOfWork unitOfWork, SMTPEmailSender sMTPEmailSender)
+            IUnitOfWork unitOfWork, SMTPEmailSender sMTPEmailSender,
+            IWebHostEnvironment hostEnvironment)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -46,6 +50,7 @@ namespace BulkyBook.Areas.Identity.Pages.Account
             _roleManager = roleManager;
             _unitOfWork = unitOfWork;
             _smtpemailSender = sMTPEmailSender;
+            _hostEnvironment = hostEnvironment;
         }
 
         [BindProperty]
@@ -105,7 +110,14 @@ namespace BulkyBook.Areas.Identity.Pages.Account
                     Value = i
                 })
             };
-
+            if (User.IsInRole(SD.Role_Employee))
+            {
+                Input.RoleList = _roleManager.Roles.Where(u => u.Name == SD.Role_User_Comp).Select(x => x.Name).Select(i => new SelectListItem
+                {
+                    Text = i,
+                    Value = i
+                });
+            }
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
         }
 
@@ -170,8 +182,39 @@ namespace BulkyBook.Areas.Identity.Pages.Account
                         pageHandler: null,
                         values: new { area = "Identity", userId = user.Id, code = code },
                         protocol: Request.Scheme);
+
+                    var pathToFile = _hostEnvironment.WebRootPath + Path.DirectorySeparatorChar.ToString() +
+                        "Templates" + Path.DirectorySeparatorChar.ToString() + "EmailTemplates" +
+                        Path.DirectorySeparatorChar.ToString() + "Confirm_Account_Registration.html";
+
+                    var subject = "Confirm Account Registration";
+                    string HtmlBody = "";
+
+                    using (StreamReader streamReader = System.IO.File.OpenText(pathToFile))
+                    {
+                        HtmlBody = streamReader.ReadToEnd();
+                    }
+
+                    //{0} : Subject  
+                    //{1} : DateTime  
+                    //{2} : Name  
+                    //{3} : Email  
+                    //{4} : Message  
+                    //{5} : callbackURL  
+
+                    string message = $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.";
+
+                    string messageBody = string.Format(HtmlBody,
+                        subject,
+                        string.Format("{0:dddd, d MMMM yyyy}", DateTime.Now),
+                        user.Name,
+                        user.Email,
+                        message,
+                        callbackUrl
+                        );
                     //SMTP
-                    _smtpemailSender.SendEmail(Input.Email, "Confirm your email", $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    _smtpemailSender.SendEmail(Input.Email, "Confirm your email", messageBody);
+                    //_smtpemailSender.SendEmail(Input.Email, "Confirm your email", $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
                     //SendGrid
                     await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",

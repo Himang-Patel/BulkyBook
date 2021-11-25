@@ -12,15 +12,15 @@ namespace BulkyBook.Utility
     {
         public void SendEmail(string username, string subject, string body)
         {
-            var smtpClient = new SmtpClient("smtp.gmail.com")
+            var smtpClient = new SmtpClient(SD.SMTPHost)
             {
                 Port = 587,
-                Credentials = new NetworkCredential("tbs.dharvi@gmail.com", "Dharvi@01234"),
+                Credentials = new NetworkCredential(SD.SMTPUserName, SD.SMTPPassword),
                 EnableSsl = true,
             };
             var mailMessage = new MailMessage
             {
-                From = new MailAddress("system@adminlte.com"),
+                From = new MailAddress(SD.SMTPMailAddress),
                 Subject = subject,
                 Body = body,
                 IsBodyHtml = true,

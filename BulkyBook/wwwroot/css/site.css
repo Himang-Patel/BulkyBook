@@ -200,10 +200,15 @@ body {
     margin: 0 auto;
 }
 
-.cursor-pointer{
-    cursor:pointer;
+.cursor-pointer {
+    cursor: pointer;
 }
+
 .form-group {
     padding-top: 7px;
     padding-bottom: 7px;
+}
+
+.float-right {
+    float: right;
 }

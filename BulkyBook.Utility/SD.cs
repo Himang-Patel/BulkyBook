@@ -33,6 +33,15 @@ namespace BulkyBook.Utility
         public const string PaymentStatusDelayedPayment = "ApprovedForDelayedPayment";
         public const string PaymentStatusRejected = "Rejected";
 
+        #region SMTP Conbfigurations
+
+        public const string SMTPHost = "smtp.gmail.com";
+        public const string SMTPUserName = "tbs.dharvi@gmail.com";
+        public const string SMTPPassword = "Dharvi@01234";
+        public const string SMTPMailAddress = "system@adminlte.com";
+
+        #endregion
+
 
         public static double GetPriceBasedOnQuantity(double quantity, double price, double price50, double price100)
         {
